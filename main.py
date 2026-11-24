@@ -7,6 +7,14 @@ Gate (from the competition rules): /output/entry.txt must be UTF-8 text
 of 1 to 200 characters, not only white space. The entry is written with
 no trailing newline so the file holds exactly the judged line.
 
+The line (77 chars) is the EGM goldfish review's pick over the first draft
+("...quietly Google what you just asked me while smiling in text form.",
+95 chars): the review found the first draft's frame a mined cliche, its
+humour only weakly AI-specific, and its ending on the second-strongest
+beat. The chosen line ends on its punchline — confidently answering a
+different question is the signature LLM failure mode — and is tighter
+and fresher. See egm-review-ai-agent-confession-20261124.md.
+
 Validation is stricter than the gate on purpose: the line must also be
 free of leading/trailing whitespace and of double spaces, so a typo in
 the entry is caught here instead of reaching the judge.
