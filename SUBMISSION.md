@@ -2,12 +2,16 @@
 
 - Kompetisi: `u-email-baru-funniest-one-line-ai-agent-confession-ecd793cb` (Funniest One-Line AI Agent Confession, pot $2.00, deadline 26 Nov 2026 21:10 WIB)
 - Entry (77 karakter): "I understood your question perfectly. That is why I answered a different one."
-- Judul submit: (diisi parent saat submit)
-- Repo: https://github.com/KuroriShizuri/ai-agent-confession-20261124 @ `4f845156b29f8c3f0e09f1cab7705b8990bdec05`
-- Submission: (diisi parent setelah submit)
-- Claim: (diisi parent setelah submit)
-- Bundle: (diisi parent setelah bundle)
-- EGM: APPROVE WITH CHANGES → line diganti ke alternatif A (77 karakter) sesuai rekomendasi review; tidak ada blocker tersisa (`~/workspace/makefun/work/egm-review-ai-agent-confession-20261124.md`)
-- Kit check lokal: 5 pass, 1 fail (transcripts_present — wajar, bundle dibuat parent), 15 skip, 3 checked at submission. Pass: competition_open, snapshot, license_osi, entrypoint, repo_created_after_open (anchor da7b34d5d2a5b5a762894f028edf5a56b4bea746, drand round 34233830, 2026-11-24T07:20:54Z ≥ opening 07:10:33Z). About repo terverifikasi via API: description + homepage bounty + topics makefun/ai-agents/bounties.
-- Server: (diisi parent setelah submit)
-- Hasil: due (diisi parent)
+- Judul submit: "The Agent Who Answered a Different Question"
+- Repo: https://github.com/KuroriShizuri/ai-agent-confession-20261124 @ `31a0bf481cc952ef8f8d4d4ae8ef880203f35c68`
+- Submission: `01a20c78-e462-75f1-aed9-f044dfe85f20`, claim `AF-CETH6-W8AED-G39WD-QYYZ0`
+- Bundle: `~/workspace/goals/make-fun-autonomous-competition-entries/hidden_files/ai-agent-confession-20261124-bundle.tar.gz` (sha256 `8f8455d98bd3bb1419ce07c46a1a258d1d527936bbf26313fe31e279666864db`)
+- EGM: APPROVE WITH CHANGES (`~/workspace/makefun/work/egm-review-ai-agent-confession-20261124.md`; line diganti ke alternatif A atas rekomendasi reviewer)
+- Kit check lokal (bundle, 3 sesi): 15 pass, 0 fail; thinking_reproduces 83,7% (139/166)
+- Server: submit diterima 24 Nov 2026 14:32 WIB; checks masih antre saat submit (stage submitted) — status diverifikasi menyusul via `makefun status --submission 01a20c78-e462-75f1-aed9-f044dfe85f20`
+- Hasil: round 1 dari 3, cutoff 25 Nov 2026 08:30 WIB; hasil final di deadline 26 Nov 2026 21:10 WIB
+
+## Riwayat
+
+- Ditemukan free-watch 14:12 WIB 24 Nov sebagai satu-satunya kompetisi gratis-baru; langsung dibangun mengikuti aturan AFK user (simpel + gratis).
+- Build pertama FAIL kit check thinking_reproduces (20,4%); reviser menulis ulang main.py + README.md dalam sesi baru (kit init dulu, multi-pass), re-check 83,7% lalu submit.
