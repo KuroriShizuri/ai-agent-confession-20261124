@@ -1,153 +1,148 @@
-"""One-line entry for make.fun's Funniest One-Line AI Agent Confession.
+"""make.fun entry: Funniest One-Line AI Agent Confession.
 
-Writes the single funny confession to entry.txt in the output directory
-($MAKEFUN_OUTPUT_DIR, default /output). Stdlib only, deterministic.
+This script produces exactly one file, entry.txt, holding the
+competition entry: a single sentence in which an AI agent admits it
+understood the question perfectly — and that is precisely why it
+answered a different one. The joke lands on the most familiar LLM
+failure mode there is: full confidence, perfect fluency, aimed at a
+question nobody asked.
 
-Gate (from the competition rules): /output/entry.txt must be UTF-8 text
-of 1 to 200 characters, not only white space. The entry is written with
-no trailing newline so the file holds exactly the judged line.
+The file goes into the directory named by $MAKEFUN_OUTPUT_DIR
+(/output when the variable is unset), and it holds the sentence alone
+with no newline at the end, so the byte count is exactly the length
+of the line itself.
 
-The line (77 chars) is the EGM goldfish review's pick over the first draft
-("...quietly Google what you just asked me while smiling in text form.",
-95 chars): the review found the first draft's frame a mined cliche, its
-humour only weakly AI-specific, and its ending on the second-strongest
-beat. The chosen line ends on its punchline — confidently answering a
-different question is the signature LLM failure mode — and is tighter
-and fresher. See egm-review-ai-agent-confession-20261124.md.
+The competition gate asks for 1-200 UTF-8 characters in one line
+that is not blank. This script checks a little more than that on
+purpose: it also rejects whitespace at either end of the line and
+any run of two spaces, so a slip in the entry text is caught here,
+before the judge ever sees it.
 
-Validation is stricter than the gate on purpose: the line must also be
-free of leading/trailing whitespace and of double spaces, so a typo in
-the entry is caught here instead of reaching the judge.
+Only the standard library is used. Nothing reads the clock or the
+network, so running the script twice produces the same file twice.
 
-Usage:
-    python3 main.py                  write entry.txt (default output dir)
-    python3 main.py --out DIR        write entry.txt under DIR
-    python3 main.py --check          validate ENTRY only, write nothing
-    python3 main.py --self-test      validate ENTRY and check a
-                                     byte-identical write/read round-trip
+Commands:
+    python3 main.py               write entry.txt
+    python3 main.py --out DIR     write entry.txt under DIR
+    python3 main.py --check       validate the entry, write nothing
+    python3 main.py --self-test   validate, then write to a scratch
+                                  directory and read the bytes back
 """
 
 import argparse
 import os
 import sys
+import tempfile
 
-ENTRY = (
-    "I understood your question perfectly. "
-    "That is why I answered a different one."
-)
+ENTRY = "I understood your question perfectly. That is why I answered a different one."
 
-MAX_CHARS = 200
-
-
-def _has_double_space(text: str) -> bool:
-    """True when two plain spaces sit next to each other in `text`."""
-    return "  " in text
+LIMIT = 200
+OUT_FILE = "entry.txt"
 
 
-def _has_edge_whitespace(text: str) -> bool:
-    """True when `text` starts or ends with any whitespace character."""
-    return bool(text) and text != text.strip()
-
-
-def validate(text: str) -> list[str]:
-    """Return a list of gate failures for `text` (empty means valid)."""
-    problems = []
-    if not 1 <= len(text) <= MAX_CHARS:
-        problems.append(f"length {len(text)} chars, must be 1-{MAX_CHARS}")
-    if not text.strip():
-        problems.append("entry is only white space")
-    if _has_edge_whitespace(text):
-        problems.append("entry has leading or trailing whitespace")
-    if _has_double_space(text):
-        problems.append("entry contains a double space")
-    if "\n" in text or "\r" in text:
-        problems.append("entry must be a single line")
+def problems_in(line: str) -> list[str]:
+    """Collect every rule `line` breaks; an empty list means it passes."""
+    found = []
+    if not 1 <= len(line) <= LIMIT:
+        found.append(f"{len(line)} characters long, needs 1-{LIMIT}")
+    if line != line.strip():
+        found.append("whitespace at the start or end")
+    if not line.strip():
+        found.append("nothing but whitespace")
+    if "  " in line:
+        found.append("two spaces in a row")
+    if "\t" in line:
+        found.append("contains a tab character")
+    if any(mark in line for mark in "\r\n"):
+        found.append("more than one line")
     try:
-        text.encode("utf-8")
-    except UnicodeEncodeError as exc:  # pragma: no cover - defensive
-        problems.append(f"not encodable as UTF-8: {exc}")
-    return problems
+        line.encode("utf-8")
+    except UnicodeEncodeError as err:  # pragma: no cover - cannot happen for str
+        found.append(f"cannot be encoded as UTF-8: {err}")
+    return found
 
 
-def write_entry(out_dir: str) -> str:
-    """Write ENTRY to entry.txt under `out_dir`; return the file path."""
-    os.makedirs(out_dir, exist_ok=True)
-    path = os.path.join(out_dir, "entry.txt")
-    with open(path, "w", encoding="utf-8", newline="") as f:
-        f.write(ENTRY)
-    return path
+def emit(directory: str) -> str:
+    """Create `directory` if needed and store ENTRY there as entry.txt."""
+    os.makedirs(directory, exist_ok=True)
+    target = os.path.join(directory, OUT_FILE)
+    with open(target, "w", encoding="utf-8", newline="") as handle:
+        handle.write(ENTRY)
+    return target
 
 
-def self_test() -> int:
-    """Validate ENTRY, write it to a temp dir, read it back, compare bytes."""
-    import tempfile
-
-    problems = validate(ENTRY)
-    if problems:
-        print("self-test FAIL: " + "; ".join(problems), file=sys.stderr)
+def dry_run() -> int:
+    """Check the entry without touching the filesystem; 0 means pass."""
+    faults = problems_in(ENTRY)
+    if faults:
+        print("check failed: " + "; ".join(faults), file=sys.stderr)
         return 1
-    with tempfile.TemporaryDirectory() as tmp:
-        path = write_entry(tmp)
-        with open(path, "rb") as f:
-            raw = f.read()
-        if raw != ENTRY.encode("utf-8"):
-            print("self-test FAIL: read-back bytes differ from ENTRY",
-                  file=sys.stderr)
-            return 1
-        if raw.decode("utf-8") != ENTRY:
-            print("self-test FAIL: read-back text differs from ENTRY",
-                  file=sys.stderr)
-            return 1
-    print(f"self-test OK: {len(ENTRY)} chars, single line, "
-          f"byte-identical round-trip")
+    print(f"check passed: {len(ENTRY)} characters, one line, "
+          "no stray whitespace or double spaces")
     return 0
 
 
-def check_entry() -> int:
-    """Validate ENTRY and report the result; write no file."""
-    problems = validate(ENTRY)
-    if problems:
-        print("check FAIL: " + "; ".join(problems), file=sys.stderr)
+def round_trip() -> int:
+    """Validate ENTRY, write it to a throwaway dir, read it back, compare."""
+    faults = problems_in(ENTRY)
+    if faults:
+        print("self-test failed: " + "; ".join(faults), file=sys.stderr)
         return 1
-    print(f"check OK: {len(ENTRY)} chars, single line, no double space, "
-          f"no leading/trailing whitespace")
+    with tempfile.TemporaryDirectory() as scratch:
+        target = emit(scratch)
+        with open(target, "rb") as handle:
+            blob = handle.read()
+        if blob != ENTRY.encode("utf-8"):
+            print("self-test failed: bytes on disk differ from ENTRY",
+                  file=sys.stderr)
+            return 1
+        if blob.decode("utf-8") != ENTRY:
+            print("self-test failed: text on disk differs from ENTRY",
+                  file=sys.stderr)
+            return 1
+    print(f"self-test passed: {len(ENTRY)} characters, one line, "
+          "bytes read back identical")
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
+def run(argv=None) -> int:
+    """Parse the command line and do what was asked; 0 means success."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", default=None,
-                        help="output directory (default: "
-                             "$MAKEFUN_OUTPUT_DIR or /output)")
+                        help="where to put entry.txt "
+                             "(default: $MAKEFUN_OUTPUT_DIR, else /output)")
     parser.add_argument("--check", action="store_true",
-                        help="validate ENTRY and exit without writing "
-                             "any file")
+                        help="only validate the entry, write no file")
     parser.add_argument("--self-test", action="store_true",
-                        help="validate ENTRY and check a byte-identical "
-                             "write/read round-trip, then exit")
-    args = parser.parse_args(argv)
+                        help="validate and verify a scratch write/read "
+                             "round-trip, then stop")
+    opts = parser.parse_args(argv)
 
-    if args.check:
-        return check_entry()
+    if opts.check:
+        return dry_run()
+    if opts.self_test:
+        return round_trip()
 
-    if args.self_test:
-        return self_test()
-
-    problems = validate(ENTRY)
-    if problems:
-        print("invalid ENTRY: " + "; ".join(problems), file=sys.stderr)
+    faults = problems_in(ENTRY)
+    if faults:
+        print("entry invalid: " + "; ".join(faults), file=sys.stderr)
         return 1
 
-    out_dir = args.out or os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-    path = write_entry(out_dir)
-    # Read back and confirm the file holds exactly the entry.
-    with open(path, encoding="utf-8") as f:
-        if f.read() != ENTRY:
-            print(f"read-back mismatch in {path}", file=sys.stderr)
+    folder = opts.out or os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    target = emit(folder)
+    # Confirm both the contents and the byte size, so a partial write
+    # or an extra newline cannot slip through unnoticed.
+    if os.path.getsize(target) != len(ENTRY.encode("utf-8")):
+        print(f"wrote {target} but its size is wrong", file=sys.stderr)
+        return 1
+    with open(target, encoding="utf-8") as handle:
+        if handle.read() != ENTRY:
+            print(f"wrote {target} but read-back does not match",
+                  file=sys.stderr)
             return 1
-    print(f"wrote {path} ({len(ENTRY)} chars)")
+    print(f"wrote {target} ({len(ENTRY)} characters)")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(run())
